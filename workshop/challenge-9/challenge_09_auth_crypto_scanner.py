@@ -28,12 +28,12 @@ nest_asyncio.apply()
 from dotenv import load_dotenv
 from agent_framework import Agent
 
-from shared_models import GITHUB_REPO, VulnerabilityList, create_mcp_client, create_chat_client
+from shared_models import GITHUB_REPO, VulnerabilityList, create_mcp_client2, create_chat_client2
 
 load_dotenv()
 
-chat_client = create_chat_client()
-chat_client_mcp = create_mcp_client()
+chat_client = create_chat_client2()
+chat_client_mcp = create_mcp_client2()
 
 # Import tools from previous challenges
 from challenge_01_repo_access import github_mcp_tool
@@ -85,7 +85,26 @@ from challenge_04_middleware import agent_logging_middleware, tool_logging_middl
 # Assign to: auth_crypto_scanner
 # ═════════════════════════════════════════════════════════════════════
 
-auth_crypto_scanner = None  # Replace with your implementation
+auth_crypto_scanner = Agent(
+    client=chat_client_mcp,
+    name="Auth & Crypto Scanner",
+    instructions=f"""You are a specialized authentication and cryptography security expert.
+Your task is to scan the repository '{GITHUB_REPO}' for authentication weaknesses and cryptography issues. Focus on files like auth.py, utils/crypto.py, and any file handling sessions, tokens, or encryption.
+Identify issues such as weak password hashing (MD5, SHA1 without salt), JWT misconfigurations (e.g., 'none' algorithm allowed), deprecated crypto usage (DES, ECB mode), timing-attack vulnerable comparisons, and predictable tokens.
+Follow these strict steps:
+1. Use 'list_repo_files' to get the full list of files.
+2. For EVERY relevant source code file (e.g., auth.py), use 'read_repo_file' to fetch its content. Always keep the repository '{GITHUB_REPO}' in context.
+3. Analyze the code deeply for the vulnerabilities listed above.
+4. If a vulnerability is found, IMMEDIATELY call 'report_vulnerability' with the file, start_line, end_line, and a technical description.
+5. After analyzing a file, you MUST call 'mark_file_scanned(file_path)'.
+6. Focus on the specific patterns of weak authentication and cryptography, such as weak hashing algorithms, JWT misconfigurations, and deprecated crypto usage.
+7. CRITICAL: Return your final response STRICTLY as a raw JSON object matching the VulnerabilityList schema. Do NOT add any conversational text like "Here are the findings". Do NOT wrap the JSON in markdown formatting blocks (e.g., ```json). Output ONLY the raw JSON.
+    """,
+    tools=[github_mcp_tool, list_repo_files, read_repo_file, report_vulnerability, mark_file_scanned],
+    context_providers=[scan_memory],
+    response_format=VulnerabilityList,
+    middleware=[agent_logging_middleware, tool_logging_middleware]
+)
 
 
 # ─── Test (DO NOT MODIFY) ────────────────────────────────────────────

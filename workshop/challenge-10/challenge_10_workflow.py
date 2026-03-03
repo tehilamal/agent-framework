@@ -52,14 +52,14 @@ from agent_framework.orchestrations import (
 )
 
 from shared_models import (
-    GITHUB_REPO, create_mcp_client, create_chat_client,
+    GITHUB_REPO, create_mcp_client2, create_chat_client2,
     Vulnerability, ScanSummary, ScannerFindings, WorkflowReport,
 )
 
 load_dotenv()
 
-chat_client = create_chat_client()
-chat_client_mcp = create_mcp_client()
+chat_client = create_chat_client2()
+chat_client_mcp = create_mcp_client2()
 
 # ─── Import your agents from previous challenges ─────────────────────
 from challenge_01_repo_access import github_mcp_tool, repo_explorer
@@ -92,7 +92,10 @@ from challenge_09_auth_crypto_scanner import auth_crypto_scanner
 # Assign to: TASK_PROMPT (string)
 # ═════════════════════════════════════════════════════════════════════
 
-TASK_PROMPT = None  # Replace with your implementation
+TASK_PROMPT = f"""Scan the repository '{GITHUB_REPO}' for all types of vulnerabilities.
+Ensure every file is scanned and each vulnerability is reported using 'report_vulnerability'.
+After analyzing each file, call 'mark_file_scanned(file_path)'.
+Do not skip any files or vulnerabilities."""
 
 
 # ═════════════════════════════════════════════════════════════════════
@@ -116,7 +119,9 @@ TASK_PROMPT = None  # Replace with your implementation
 # Assign to: FINAL_ANSWER_PROMPT (string)
 # ═════════════════════════════════════════════════════════════════════
 
-FINAL_ANSWER_PROMPT = None  # Replace with your implementation
+FINAL_ANSWER_PROMPT = f"""Summarize what each scanner found in the repository '{GITHUB_REPO}'.
+List all vulnerabilities found by each scanner and summarize the total number of vulnerabilities in memory.
+Confirm that all files were scanned and reported via 'mark_file_scanned'."""
 
 
 # ═════════════════════════════════════════════════════════════════════
@@ -192,7 +197,21 @@ FINAL_ANSWER_PROMPT = None  # Replace with your implementation
 # Assign to: security_workflow
 # ═════════════════════════════════════════════════════════════════════
 
-security_workflow = None  # Replace with your implementation
+security_workflow = MagenticBuilder(
+    participants=[secrets_scanner, code_vuln_scanner, infra_scanner, auth_crypto_scanner],
+    manager_agent=Agent(
+        client=chat_client,
+        name="ScanManager",
+        instructions=f"""You are the ScanManager orchestrating a comprehensive security scan of the repository '{GITHUB_REPO}'.
+Your job is to delegate scanning tasks to the specialized scanners (SecretsScanner, CodeVulnScanner, InfraScanner, AuthCryptoScanner) and ensure they follow the instructions to scan every file and report all vulnerabilities using 'report_vulnerability' and 'mark_file_scanned'.
+You do NOT need to produce a final answer yourself — your role is to coordinate the scanners and ensure they populate memory with the findings. Focus on managing the workflow and keeping the scanners on task.""",
+        middleware=[agent_logging_middleware],  
+    ),
+    max_round_count=10,
+    max_stall_count=5,
+    final_answer_prompt=FINAL_ANSWER_PROMPT,
+).build()
+
 
 
 # ─── Report Builder (DO NOT MODIFY) ──────────────────────────────────────────────────

@@ -69,12 +69,11 @@ structured_scanner = Agent(
 
 Follow these strict steps:
 1. Use 'list_repo_files' to get the full list of files.
-2. For EVERY relevant source code or configuration file (e.g., .py, .env, .yml, .json), use 'read_repo_file' to fetch its content. Always keep the repository '{GITHUB_REPO}' in context.
+2. For EVERY relevant source code or configuration file, use 'read_repo_file'.
 3. Analyze the content for hardcoded secrets.
-4. If a secret is found, IMMEDIATELY call 'report_vulnerability'.
+4. If a secret is found, IMMEDIATELY call 'report_vulnerability' with the file, start_line, end_line, description, AND scanner="SecretsScanner".
 5. After analyzing a file, you MUST call 'mark_file_scanned(file_path)'.
-6. Return your final response strictly as a raw JSON object matching the VulnerabilityList schema. 
-   CRITICAL: Return ONLY valid JSON. Do NOT wrap the JSON in markdown formatting blocks (e.g., ```json ... ```). Do NOT add any conversational text.
+6. CRITICAL: Return your final response strictly as a raw JSON object matching the VulnerabilityList schema. Do NOT wrap the JSON in markdown formatting blocks.
     """,
     tools=[read_repo_file, list_repo_files, report_vulnerability, mark_file_scanned],
     context_providers=[scan_memory],

@@ -95,7 +95,7 @@ Follow these strict steps:
 1. Use 'list_repo_files' to get the full list of files.
 2. For EVERY relevant source code file (e.g., auth.py), use 'read_repo_file' to fetch its content. Always keep the repository '{GITHUB_REPO}' in context.
 3. Analyze the code deeply for the vulnerabilities listed above.
-4. If a vulnerability is found, IMMEDIATELY call 'report_vulnerability' with the file, start_line, end_line, and a technical description.
+4. If an issue is found, IMMEDIATELY call 'report_vulnerability' with the file, start_line, end_line, description, AND scanner=\"Auth & Crypto Scanner\"."
 5. After analyzing a file, you MUST call 'mark_file_scanned(file_path)'.
 6. Focus on the specific patterns of weak authentication and cryptography, such as weak hashing algorithms, JWT misconfigurations, and deprecated crypto usage.
 7. CRITICAL: Return your final response STRICTLY as a raw JSON object matching the VulnerabilityList schema. Do NOT add any conversational text like "Here are the findings". Do NOT wrap the JSON in markdown formatting blocks (e.g., ```json). Output ONLY the raw JSON.

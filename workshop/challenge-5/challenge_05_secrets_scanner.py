@@ -71,22 +71,23 @@ from challenge_04_middleware import agent_logging_middleware, tool_logging_middl
 secrets_scanner = Agent(  # שים לב: שימוש ב-Agent (לפי ייבוא בסקריפט) ולא chat_client_mcp.as_agent
     client=chat_client_mcp,
     name="SecretsScanner",
-    instructions=f"""You are a security expert agent. Your task is to scan the repository '{GITHUB_REPO}' for hardcoded secrets, API keys, passwords, tokens, and credentials.
+    instructions=f"""You are a security expert agent. Your task is to scan the repository '{GITHUB_REPO}' for hardcoded secrets.
 
 Follow these strict steps:
 1. Use 'list_repo_files' to get the full list of files.
-2. For EVERY relevant source code or configuration file (e.g., .py, .env, .yml, .json), use 'read_repo_file' to fetch its content. 
-   IMPORTANT: When using 'read_repo_file', you must specify both the file path AND mention the repository '{GITHUB_REPO}' in your internal thought process so the tool gets the right context.
+2. For EVERY relevant source code or configuration file, use 'read_repo_file'.
 3. Analyze the content for hardcoded secrets.
-4. If a secret is found, IMMEDIATELY call 'report_vulnerability' with the file, start_line, end_line, and a description.
-5. After analyzing a file (whether secrets were found or not), you MUST call 'mark_file_scanned(file_path)'.
-
-Do not stop until all relevant files are scanned and marked.
+4. If a secret is found, IMMEDIATELY call 'report_vulnerability' with the file, start_line, end_line, description, AND scanner="SecretsScanner".
+5. After analyzing a file, you MUST call 'mark_file_scanned(file_path)'.
+6. CRITICAL: Return your final response strictly as a raw JSON object matching the VulnerabilityList schema. Do NOT wrap the JSON in markdown formatting blocks.
     """,
     tools=[read_repo_file, list_repo_files, report_vulnerability, mark_file_scanned],
     context_providers=[scan_memory],
     middleware=[agent_logging_middleware, tool_logging_middleware]
 )
+
+
+
 
 
 # ─── Test (DO NOT MODIFY) ────────────────────────────────────────────

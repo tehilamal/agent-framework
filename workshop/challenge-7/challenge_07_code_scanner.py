@@ -87,11 +87,11 @@ Focus heavily on:
 
 Follow these strict steps:
 1. Use 'list_repo_files' to get the full list of files.
-2. For EVERY relevant source code file (e.g., .py), use 'read_repo_file' to fetch its content. Always keep the repository '{GITHUB_REPO}' in context.
-3. Analyze the code deeply for the vulnerabilities listed above.
-4. If a vulnerability is found, IMMEDIATELY call 'report_vulnerability' with the file, start_line, end_line, and a technical description.
+2. For EVERY relevant source code file, use 'read_repo_file'.
+3. Analyze the code deeply for vulnerabilities.
+4. If a vulnerability is found, IMMEDIATELY call 'report_vulnerability' with the file, start_line, end_line, a technical description, AND scanner="CodeVulnScanner".
 5. After analyzing a file, you MUST call 'mark_file_scanned(file_path)'.
-6. CRITICAL: Return your final response strictly as a raw JSON object matching the VulnerabilityList schema. Do NOT wrap the JSON in markdown formatting blocks (e.g., ```json ... ```).
+6. CRITICAL: Return your final response strictly as a raw JSON object matching the VulnerabilityList schema. Do NOT wrap the JSON in markdown formatting blocks.
     """,
     tools=[list_repo_files, read_repo_file, report_vulnerability, mark_file_scanned],
     context_providers=[scan_memory],

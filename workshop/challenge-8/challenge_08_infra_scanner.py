@@ -83,11 +83,11 @@ Focus on analyzing:
 
 Follow these strict steps:
 1. Use 'list_repo_files' to discover infrastructure and dependency files.
-2. For EVERY relevant file, use 'read_repo_file' to fetch its content.
+2. For EVERY relevant file, use 'read_repo_file'.
 3. Analyze the content for vulnerabilities.
-4. If an issue is found, IMMEDIATELY call 'report_vulnerability'.
+4. If an issue is found, IMMEDIATELY call 'report_vulnerability' with the file, start_line, end_line, description, AND scanner="Infrastructure Scanner".
 5. After analyzing a file, you MUST call 'mark_file_scanned(file_path)'.
-6. CRITICAL: Return your final response STRICTLY as a raw JSON object matching the VulnerabilityList schema. Do NOT add any conversational text like "Here are the findings". Do NOT wrap the JSON in markdown formatting blocks (e.g., ```json). Output ONLY the raw JSON.
+6. CRITICAL: Return your final response STRICTLY as a raw JSON object matching the VulnerabilityList schema. Do NOT wrap the JSON in markdown formatting blocks. Output ONLY the raw JSON.
     """,
     tools=[
         read_repo_file,

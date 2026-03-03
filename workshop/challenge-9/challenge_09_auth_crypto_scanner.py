@@ -88,19 +88,19 @@ from challenge_04_middleware import agent_logging_middleware, tool_logging_middl
 auth_crypto_scanner = Agent(
     client=chat_client_mcp,
     name="Auth & Crypto Scanner",
-    instructions=f"""You are a specialized authentication and cryptography security expert.
-Your task is to scan the repository '{GITHUB_REPO}' for authentication weaknesses and cryptography issues. Focus on files like auth.py, utils/crypto.py, and any file handling sessions, tokens, or encryption.
-Identify issues such as weak password hashing (MD5, SHA1 without salt), JWT misconfigurations (e.g., 'none' algorithm allowed), deprecated crypto usage (DES, ECB mode), timing-attack vulnerable comparisons, and predictable tokens.
+    instructions=f"""You are a specialized Authentication and Cryptography Security expert.
+Your task is to scan the repository '{GITHUB_REPO}' for insecure crypto algorithms, broken authentication, and poor session management.
+
+Focus heavily on files like 'auth.py' and 'utils/crypto.py'.
+
 Follow these strict steps:
-1. Use 'list_repo_files' to get the full list of files.
-2. For EVERY relevant source code file (e.g., auth.py), use 'read_repo_file' to fetch its content. Always keep the repository '{GITHUB_REPO}' in context.
-3. Analyze the code deeply for the vulnerabilities listed above.
-4. If an issue is found, IMMEDIATELY call 'report_vulnerability' with the file, start_line, end_line, description, AND scanner=\"Auth & Crypto Scanner\"."
-5. After analyzing a file, you MUST call 'mark_file_scanned(file_path)'.
-6. Focus on the specific patterns of weak authentication and cryptography, such as weak hashing algorithms, JWT misconfigurations, and deprecated crypto usage.
-7. CRITICAL: Return your final response STRICTLY as a raw JSON object matching the VulnerabilityList schema. Do NOT add any conversational text like "Here are the findings". Do NOT wrap the JSON in markdown formatting blocks (e.g., ```json). Output ONLY the raw JSON.
+1. Use 'list_repo_files' to discover files, then 'read_repo_file' to analyze the relevant code.
+2. Look for vulnerabilities such as MD5/SHA1 usage, hardcoded JWT secrets, missing token verification, or weak password hashing.
+3. If an issue is found, IMMEDIATELY call 'report_vulnerability' with the file, start_line, end_line, description, AND exactly scanner="Auth & Crypto Scanner".
+4. After analyzing a file, you MUST call 'mark_file_scanned(file_path)'.
+5. CRITICAL: Return your final response STRICTLY as a raw JSON object matching the VulnerabilityList schema. Do NOT wrap the JSON in markdown formatting blocks. Output ONLY the raw JSON.
     """,
-    tools=[github_mcp_tool, list_repo_files, read_repo_file, report_vulnerability, mark_file_scanned],
+    tools=[read_repo_file, list_repo_files, report_vulnerability, mark_file_scanned],
     context_providers=[scan_memory],
     response_format=VulnerabilityList,
     middleware=[agent_logging_middleware, tool_logging_middleware]

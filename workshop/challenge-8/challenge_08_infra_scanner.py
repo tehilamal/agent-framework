@@ -26,12 +26,12 @@ nest_asyncio.apply()
 from dotenv import load_dotenv
 from agent_framework import Agent
 
-from shared_models import GITHUB_REPO, VulnerabilityList, create_mcp_client, create_chat_client
+from shared_models import GITHUB_REPO, VulnerabilityList, create_mcp_client2, create_chat_client2
 
 load_dotenv()
 
-chat_client = create_chat_client()
-chat_client_mcp = create_mcp_client()
+chat_client = create_chat_client2()
+chat_client_mcp = create_mcp_client2()
 
 # Import tools from previous challenges
 from challenge_01_repo_access import github_mcp_tool
@@ -67,7 +67,38 @@ from challenge_04_middleware import agent_logging_middleware, tool_logging_middl
 # Assign to: infra_scanner
 # ═════════════════════════════════════════════════════════════════════
 
-infra_scanner = None  # Replace with your implementation
+infra_scanner = Agent(
+    client=chat_client_mcp,
+    name="Infrastructure Scanner",
+    # שימוש ב-instructions עם הנחיות מדויקות, כולל מניעת טקסט חופשי
+    instructions=f"""You are a specialized Infrastructure and DevOps Security expert.
+Your task is to scan the repository '{GITHUB_REPO}' for dependency vulnerabilities, Docker misconfigurations, CI/CD security issues, and Terraform/IaC misconfigurations.
+
+Focus on analyzing:
+- requirements.txt (Outdated packages with CVEs)
+- Dockerfile (Running as root, no health checks, missing updates)
+- docker-compose.yml (Exposed ports, latest tags)
+- CI/CD workflow files in .github/workflows/ (Secrets logging, missing scans)
+- Terraform files (Public S3, overly permissive IAM)
+
+Follow these strict steps:
+1. Use 'list_repo_files' to discover infrastructure and dependency files.
+2. For EVERY relevant file, use 'read_repo_file' to fetch its content.
+3. Analyze the content for vulnerabilities.
+4. If an issue is found, IMMEDIATELY call 'report_vulnerability'.
+5. After analyzing a file, you MUST call 'mark_file_scanned(file_path)'.
+6. CRITICAL: Return your final response STRICTLY as a raw JSON object matching the VulnerabilityList schema. Do NOT add any conversational text like "Here are the findings". Do NOT wrap the JSON in markdown formatting blocks (e.g., ```json). Output ONLY the raw JSON.
+    """,
+    tools=[
+        read_repo_file,
+        list_repo_files,
+        report_vulnerability,
+        mark_file_scanned
+    ],
+    context_providers=[scan_memory],
+    response_format=VulnerabilityList,
+    middleware=[agent_logging_middleware, tool_logging_middleware]
+)
 
 
 # ─── Test (DO NOT MODIFY) ────────────────────────────────────────────

@@ -1,0 +1,15 @@
+digraph Workflow {
+  rankdir=TD;
+  node [shape=box, style=filled, fillcolor=lightblue];
+  edge [color=black, arrowhead=vee];
+
+  "input-conversation" [fillcolor=lightgreen, label="input-conversation\n(Start)"];
+  "Classifier" [label="Classifier"];
+  "Drafter" [label="Drafter"];
+  "Reviewer" [label="Reviewer"];
+  "end" [label="end"];
+  "input-conversation" -> "Classifier";
+  "Classifier" -> "Drafter";
+  "Drafter" -> "Reviewer";
+  "Reviewer" -> "end";
+}

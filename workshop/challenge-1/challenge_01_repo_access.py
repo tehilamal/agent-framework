@@ -27,16 +27,16 @@ from agent_framework import Agent
 
 import os
 
-from shared_models import GITHUB_REPO, create_mcp_client, create_chat_client
+from shared_models import GITHUB_REPO, create_mcp_client2, create_chat_client2
 
 load_dotenv()
 
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN") or os.popen("gh auth token").read().strip()
 
 # ─── Chat clients (provided) ─────────────────────────────────────────
-chat_client = create_chat_client()
+chat_client = create_chat_client2()
 # Needs to be redefined inside each tool/agent that uses it due to how AzureAIAgentClient manages state
-chat_client_mcp = create_mcp_client()
+chat_client_mcp = create_mcp_client2()
 
 
 # ═════════════════════════════════════════════════════════════════════
@@ -44,9 +44,14 @@ chat_client_mcp = create_mcp_client()
 #
 # Create MCP tools via
 # the client that supports hosted tools (AzureAIAgentClient):
-#   github_mcp_tool = chat_client_mcp.get_mcp_tool(
-#       name="...", url="...", headers={...}, approval_mode="..."
-#   )
+github_mcp_tool = chat_client_mcp.get_mcp_tool(
+    name="github",
+    url="https://api.githubcopilot.com/mcp",
+    headers={"Authorization": f"Bearer {GITHUB_TOKEN}"},
+    approval_mode="never_require",  # תיקון: מתאים יותר לפעולות קריאה בלבד ולזרימה אוטומטית
+    description="Tool for accessing GitHub repository contents via MCP. Use it to list files, read file contents, and explore the repository structure."
+)
+
 #
 # Think about:
 #   - What URL does GitHub's MCP server live at?
@@ -55,7 +60,7 @@ chat_client_mcp = create_mcp_client()
 # Assign it to: github_mcp_tool
 # ═════════════════════════════════════════════════════════════════════
 
-github_mcp_tool = None  # Replace with your implementation
+
 
 
 # ═════════════════════════════════════════════════════════════════════
@@ -67,7 +72,12 @@ github_mcp_tool = None  # Replace with your implementation
 #   - It should use the MCP tool you just created
 #
 # Use the new Agent class (ChatAgent was renamed to Agent):
-#   Agent(client=chat_client_mcp, name="...", instructions="...", tools=[...])
+repo_explorer = Agent(
+    client=chat_client_mcp,
+    name="repo_explorer",
+    instructions=""" You have access to a GitHub MCP tool that allows you to interact with a repository. Use this tool to explore the repository structure, list files, and read file contents as needed to understand the codebase.""",
+    tools=[github_mcp_tool],
+)
 #
 # Think about what instructions would make this agent effective
 # at navigating a codebase it has never seen before.
@@ -75,7 +85,6 @@ github_mcp_tool = None  # Replace with your implementation
 # Assign it to: repo_explorer
 # ═════════════════════════════════════════════════════════════════════
 
-repo_explorer = None  # Replace with your implementation
 
 
 # ─── Test (DO NOT MODIFY) ────────────────────────────────────────────

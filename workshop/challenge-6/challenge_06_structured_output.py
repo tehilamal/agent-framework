@@ -28,12 +28,12 @@ nest_asyncio.apply()
 from dotenv import load_dotenv
 from agent_framework import Agent
 
-from shared_models import GITHUB_REPO, Vulnerability, VulnerabilityList, create_mcp_client, create_chat_client
+from shared_models import GITHUB_REPO, Vulnerability, VulnerabilityList, create_mcp_client2, create_chat_client2
 
 load_dotenv()
 
-chat_client = create_chat_client()
-chat_client_mcp = create_mcp_client()
+chat_client = create_chat_client2()
+chat_client_mcp = create_mcp_client2()
 
 # Import tools from previous challenges
 from challenge_01_repo_access import github_mcp_tool
@@ -61,8 +61,27 @@ from challenge_04_middleware import agent_logging_middleware, tool_logging_middl
 #
 # Assign to: structured_scanner
 # ═════════════════════════════════════════════════════════════════════
+# הגדרת הסוכן לפלט מובנה
+structured_scanner = Agent(
+    client=chat_client_mcp,
+    name="StructuredScanner",
+    instructions=f"""You are a security expert agent. Your task is to scan the repository '{GITHUB_REPO}' for hardcoded secrets.
 
-structured_scanner = None  # Replace with your implementation
+Follow these strict steps:
+1. Use 'list_repo_files' to get the full list of files.
+2. For EVERY relevant source code or configuration file (e.g., .py, .env, .yml, .json), use 'read_repo_file' to fetch its content. Always keep the repository '{GITHUB_REPO}' in context.
+3. Analyze the content for hardcoded secrets.
+4. If a secret is found, IMMEDIATELY call 'report_vulnerability'.
+5. After analyzing a file, you MUST call 'mark_file_scanned(file_path)'.
+6. Return your final response strictly as a raw JSON object matching the VulnerabilityList schema. 
+   CRITICAL: Return ONLY valid JSON. Do NOT wrap the JSON in markdown formatting blocks (e.g., ```json ... ```). Do NOT add any conversational text.
+    """,
+    tools=[read_repo_file, list_repo_files, report_vulnerability, mark_file_scanned],
+    context_providers=[scan_memory],
+    middleware=[agent_logging_middleware, tool_logging_middleware],
+    # שימוש בפורמט התשובה כדי לאלץ מבנה
+    response_format=VulnerabilityList
+)
 
 
 # ─── Test (DO NOT MODIFY) ────────────────────────────────────────────

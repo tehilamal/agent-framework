@@ -28,12 +28,12 @@ nest_asyncio.apply()
 from dotenv import load_dotenv
 from agent_framework import Agent
 
-from shared_models import GITHUB_REPO, create_mcp_client, create_chat_client
+from shared_models import GITHUB_REPO, create_mcp_client2, create_chat_client2
 
 load_dotenv()
 
-chat_client = create_chat_client()
-chat_client_mcp = create_mcp_client()
+chat_client = create_chat_client2()
+chat_client_mcp = create_mcp_client2()
 
 # Import tools from previous challenges
 from challenge_01_repo_access import github_mcp_tool
@@ -67,8 +67,26 @@ from challenge_04_middleware import agent_logging_middleware, tool_logging_middl
 #
 # Assign to: secrets_scanner
 # ═════════════════════════════════════════════════════════════════════
+    
+secrets_scanner = Agent(  # שים לב: שימוש ב-Agent (לפי ייבוא בסקריפט) ולא chat_client_mcp.as_agent
+    client=chat_client_mcp,
+    name="SecretsScanner",
+    instructions=f"""You are a security expert agent. Your task is to scan the repository '{GITHUB_REPO}' for hardcoded secrets, API keys, passwords, tokens, and credentials.
 
-secrets_scanner = None  # Replace with your implementation
+Follow these strict steps:
+1. Use 'list_repo_files' to get the full list of files.
+2. For EVERY relevant source code or configuration file (e.g., .py, .env, .yml, .json), use 'read_repo_file' to fetch its content. 
+   IMPORTANT: When using 'read_repo_file', you must specify both the file path AND mention the repository '{GITHUB_REPO}' in your internal thought process so the tool gets the right context.
+3. Analyze the content for hardcoded secrets.
+4. If a secret is found, IMMEDIATELY call 'report_vulnerability' with the file, start_line, end_line, and a description.
+5. After analyzing a file (whether secrets were found or not), you MUST call 'mark_file_scanned(file_path)'.
+
+Do not stop until all relevant files are scanned and marked.
+    """,
+    tools=[read_repo_file, list_repo_files, report_vulnerability, mark_file_scanned],
+    context_providers=[scan_memory],
+    middleware=[agent_logging_middleware, tool_logging_middleware]
+)
 
 
 # ─── Test (DO NOT MODIFY) ────────────────────────────────────────────

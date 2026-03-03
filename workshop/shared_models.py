@@ -50,6 +50,36 @@ def create_chat_client():
     )
 
 
+# ─── OpenAI Chat Client Factory ──────────────────────────────────────────────
+def create_chat_client2():
+    """Create an OpenAIChatClient for OpenAI services.
+    
+    The client uses OpenAI API key and model ID from environment variables.
+    """
+    import os
+    from agent_framework.openai import OpenAIChatClient
+    
+    return OpenAIChatClient(
+        api_key=os.environ["OPENAI_API_KEY"],
+        model_id=os.environ.get("OPENAI_CHAT_MODEL_ID", "gpt-4")
+    )
+
+
+# ─── OpenAI Agent Client Factory ──────────────────────────────────────────────
+import os
+from agent_framework.openai import OpenAIResponsesClient
+
+def create_mcp_client2() -> OpenAIResponsesClient:
+    """
+    יצירת לקוח OpenAI עם תמיכה מתקדמת בכלים מנוהלים כמו MCP.
+    """
+    if "OPENAI_API_KEY" not in os.environ:
+        raise ValueError("Missing OPENAI_API_KEY environment variable.")
+    
+    # הפתרון: שימוש בלקוח התשובות (Responses) שכולל תמיכה ב-MCP
+    return OpenAIResponsesClient(api_key=os.environ["OPENAI_API_KEY"])
+
+
 # ─── GitHub Repository ────────────────────────────────────────────────
 # The vulnerable application is hosted here. Agents access it via GitHub MCP.
 GITHUB_REPO_OWNER = "galshohat"

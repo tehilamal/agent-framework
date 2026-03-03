@@ -38,11 +38,12 @@ from collections.abc import MutableSequence, Sequence
 from typing import Any, Annotated
 from pydantic import Field
 
-from shared_models import GITHUB_REPO, create_mcp_client, create_chat_client
+from shared_models import GITHUB_REPO, create_mcp_client2, create_chat_client2
 
 load_dotenv()
 
-chat_client = create_chat_client()
+chat_client = create_chat_client2()
+chat_client_mcp = create_mcp_client2()
 
 # Import file tools from Challenge 02
 from challenge_02_file_tools import read_repo_file, list_repo_files
@@ -86,15 +87,31 @@ from challenge_02_file_tools import read_repo_file, list_repo_files
 # Create a module-level instance: scan_memory = ScanMemory()
 # ═════════════════════════════════════════════════════════════════════
 
-# class ScanMemory(BaseContextProvider):
-#     def __init__(self):
-#         super().__init__(source_id="scan_memory")
-#         ...
+class ScanMemory(BaseContextProvider):
+    def __init__(self):
+        super().__init__(source_id="scan_memory")
+        self.files_covered = set()
+        self.vulnerabilities = []
 
-scan_memory = None  # Replace with your implementation
+    def reset(self):
+        self.files_covered.clear()
+        self.vulnerabilities.clear()
+
+    def _add_vuln(self, file, start_line, end_line, description, scanner="unknown"):
+        if (file, start_line, end_line) not in [(v["file"], v["start_line"], v["end_line"]) for v in self.vulnerabilities]:
+            self.vulnerabilities.append({
+                "file": file,
+                "start_line": start_line,
+                "end_line": end_line,
+                "description": description,
+                "scanner": scanner
+            })
+    
+
+scan_memory = ScanMemory()  # Initialize the scan_memory instance
 
 
-# ═════════════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════==
 # TODO 2: Create a report_vulnerability tool
 #
 # A @tool-decorated function that records a single vulnerability in
@@ -116,9 +133,20 @@ scan_memory = None  # Replace with your implementation
 # Assign to: report_vulnerability
 # ═════════════════════════════════════════════════════════════════════
 
-# @tool(...)
-# def report_vulnerability(...):
-#     ...
+@tool(name="report_vulnerability", description="Record a vulnerability in memory.")
+def report_vulnerability(
+    file: Annotated[str, Field(description="Relative file path where the vulnerability was found")],
+    start_line: Annotated[int, Field(description="Starting line number of the vulnerability")],
+    end_line: Annotated[int, Field(description="Ending line number of the vulnerability (same as start_line for single-line issues)")],
+    description: Annotated[str, Field(description="Short description of the vulnerability")],
+    scanner: Annotated[str, Field(description="Name of the scanner that found this (default='unknown')")] = "unknown"
+) -> str:
+    """Record a vulnerability in memory.
+    """    
+    scan_memory._add_vuln(file, start_line, end_line, description, scanner)
+    scan_memory.files_covered.add(file)
+    return f"Vulnerability recorded: {file}:{start_line}-{end_line} — {description[:60]} (scanner: {scanner})"
+
 
 
 # ═════════════════════════════════════════════════════════════════════
@@ -134,9 +162,10 @@ scan_memory = None  # Replace with your implementation
 # Assign to: mark_file_scanned
 # ═════════════════════════════════════════════════════════════════════
 
-# @tool(...)
-# def mark_file_scanned(...):
-#     ...
+@tool(name="mark_file_scanned", description="Mark a file as scanned in memory.")
+def mark_file_scanned(file_path: Annotated[str, Field(description="Relative file path that was analyzed")]) -> str:
+    scan_memory.files_covered.add(file_path)
+    return f"File marked as scanned: {file_path}"
 
 
 # ─── Test (DO NOT MODIFY) ────────────────────────────────────────────

@@ -25,12 +25,12 @@ nest_asyncio.apply()
 from dotenv import load_dotenv
 from agent_framework import Agent
 
-from shared_models import GITHUB_REPO, VulnerabilityList, create_mcp_client, create_chat_client
+from shared_models import GITHUB_REPO, VulnerabilityList, create_mcp_client2, create_chat_client2
 
 load_dotenv()
 
-chat_client = create_chat_client()
-chat_client_mcp = create_mcp_client()
+chat_client = create_chat_client2()
+chat_client_mcp = create_mcp_client2()
 
 # Import tools from previous challenges
 from challenge_01_repo_access import github_mcp_tool
@@ -66,7 +66,38 @@ from challenge_04_middleware import agent_logging_middleware, tool_logging_middl
 # Assign to: code_vuln_scanner
 # ═════════════════════════════════════════════════════════════════════
 
-code_vuln_scanner = None  # Replace with your implementation
+code_vuln_scanner = Agent(
+    client=chat_client_mcp,  # הלקוח הנכון שתומך ב-MCP
+    name="CodeVulnScanner",
+    # הנחיות מפורטות לחיפוש חולשות אבטחה, כולל אילוץ פלט JSON נקי
+    instructions=f"""You are a specialized application security expert. 
+Your task is to scan the repository '{GITHUB_REPO}' specifically for code-level vulnerabilities.
+
+Focus heavily on:
+- SQL injection
+- Command injection (os.system, subprocess with shell=True)
+- Cross-site scripting (XSS)
+- Server-side request forgery (SSRF)
+- Insecure deserialization (pickle, yaml.load)
+- Path traversal
+- XML external entity injection (XXE)
+- Use of eval/exec with user input
+- Missing authentication/authorization checks
+- Sensitive data in logs
+
+Follow these strict steps:
+1. Use 'list_repo_files' to get the full list of files.
+2. For EVERY relevant source code file (e.g., .py), use 'read_repo_file' to fetch its content. Always keep the repository '{GITHUB_REPO}' in context.
+3. Analyze the code deeply for the vulnerabilities listed above.
+4. If a vulnerability is found, IMMEDIATELY call 'report_vulnerability' with the file, start_line, end_line, and a technical description.
+5. After analyzing a file, you MUST call 'mark_file_scanned(file_path)'.
+6. CRITICAL: Return your final response strictly as a raw JSON object matching the VulnerabilityList schema. Do NOT wrap the JSON in markdown formatting blocks (e.g., ```json ... ```).
+    """,
+    tools=[list_repo_files, read_repo_file, report_vulnerability, mark_file_scanned],
+    context_providers=[scan_memory],
+    response_format=VulnerabilityList,
+    middleware=[agent_logging_middleware, tool_logging_middleware]
+)
 
 
 # ─── Test (DO NOT MODIFY) ────────────────────────────────────────────

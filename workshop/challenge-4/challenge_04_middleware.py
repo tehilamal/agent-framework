@@ -30,12 +30,12 @@ from agent_framework import (
 )
 from typing import Callable, Awaitable
 
-from shared_models import GITHUB_REPO, create_mcp_client, create_chat_client
+from shared_models import GITHUB_REPO, create_mcp_client2, create_chat_client2
 
 load_dotenv()
 
-chat_client = create_chat_client()
-chat_client_mcp = create_mcp_client()
+chat_client = create_chat_client2()
+chat_client_mcp = create_mcp_client2()
 
 # Import tools from previous challenges
 from challenge_02_file_tools import read_repo_file, list_repo_files
@@ -69,13 +69,28 @@ from challenge_02_file_tools import read_repo_file, list_repo_files
 # Assign to: agent_logging_middleware
 # ═════════════════════════════════════════════════════════════════════
 
-agent_logging_middleware = None  # Replace with your implementation
+@agent_middleware
+async def agent_logging_middleware(
+    context: AgentContext,
+    call_next: Callable[[], Awaitable[None]],
+) -> None:
+    start_time = time.time()
+    message_count = len(context.messages) if context.messages else 0
+    print(f"🚀 Agent started processing with {message_count} messages")
+    
+    await call_next()
+    
+    duration = time.time() - start_time
+    print(f"✅ Agent finished processing in {duration:.2f} seconds")
+
+# Assign the implemented function
+agent_logging_middleware = agent_logging_middleware
 
 
 # ═════════════════════════════════════════════════════════════════════
 # TODO: Create tool_logging_middleware
 #
-# This middleware wraps individual tool/function calls. It should:
+# This middleware wraps individual tool calls. It should:
 #   - Log which tool is being called and with what arguments
 #   - Log the tool's result (truncated if long)
 #
@@ -99,7 +114,23 @@ agent_logging_middleware = None  # Replace with your implementation
 # Assign to: tool_logging_middleware
 # ═════════════════════════════════════════════════════════════════════
 
-tool_logging_middleware = None  # Replace with your implementation
+@function_middleware
+async def tool_logging_middleware(
+    context: FunctionInvocationContext,
+    next_call: Callable[[FunctionInvocationContext], Awaitable[None]],
+) -> None:
+    print(f"🔍 Calling tool: {context.function.name}")
+    print(f"   Arguments: {context.arguments}")
+    
+    await next_call()
+    
+    result_str = str(context.result)
+    if len(result_str) > 100:
+        result_str = result_str[:100] + "..."
+    print(f"   Result: {result_str}")
+
+# Assign the implemented function
+tool_logging_middleware = tool_logging_middleware
 
 
 # ─── Test (DO NOT MODIFY) ────────────────────────────────────────────
